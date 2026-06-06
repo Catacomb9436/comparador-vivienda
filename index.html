@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comprar vs. invertir — Hillerød</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..500&family=Hanken+Grotesk:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4F1E9; --surface:#FFFFFF; --surface-2:#FBF9F3;
+    --ink:#211E1A; --ink-soft:#57534C; --ink-faint:#8C877D;
+    --line:#E5E0D4; --line-strong:#D0C9B9;
+    --buy:#B0492F; --buy-soft:#F4E4DC;
+    --invest:#1F6B54; --invest-soft:#DFEDE7;
+    --pos:#1F6B54; --neg:#B0492F; --warn:#956512; --warn-soft:#F5EAD2;
+    --r-sm:8px; --r-md:12px; --r-lg:16px;
+    --mono:'Spline Sans Mono',ui-monospace,monospace;
+    --sans:'Hanken Grotesk',system-ui,sans-serif;
+    --display:'Fraunces',Georgia,serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .page{max-width:1160px;margin:0 auto;padding:40px 28px 64px}
+  @media(max-width:600px){.page{padding:28px 18px 48px}}
+
+  .hero{padding-bottom:28px;margin-bottom:32px;border-bottom:1px solid var(--line);animation:fadeUp .7s ease both}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:14px}
+  h1{font-family:var(--display);font-weight:500;font-size:clamp(2.3rem,6vw,3.7rem);line-height:1.02;letter-spacing:-.01em}
+  h1 .vs{font-style:italic;font-weight:400;color:var(--buy)}
+  .split-rule{display:flex;gap:6px;margin:18px 0 16px;max-width:140px}
+  .split-rule span{height:4px;border-radius:2px}
+  .split-rule .a{flex:1.3;background:var(--buy)}
+  .split-rule .b{flex:1;background:var(--invest)}
+  .hero-sub{color:var(--ink-soft);font-size:1.05rem;max-width:58ch}
+
+  .layout{display:grid;grid-template-columns:362px 1fr;gap:30px;align-items:start}
+  @media(max-width:960px){.layout{grid-template-columns:1fr}}
+
+  .controls{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:22px 22px 26px;position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto;animation:fadeUp .7s .08s ease both}
+  @media(max-width:960px){.controls{position:static;max-height:none}}
+  .controls::-webkit-scrollbar{width:8px}
+  .controls::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:4px}
+
+  .cg-title{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin:22px 0 10px;padding-top:14px;border-top:1px solid var(--line)}
+  .cg-title:first-of-type{margin-top:0;padding-top:0;border-top:none}
+  .ctrl{margin:13px 0}
+  .ctrl-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .ctrl-label{font-size:.88rem;color:var(--ink-soft)}
+  .ctrl-val{font-family:var(--mono);font-size:.86rem;font-weight:500;color:var(--ink);white-space:nowrap}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;margin-top:9px;background:var(--line);border-radius:3px;accent-color:var(--buy);outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:var(--buy);border:3px solid var(--surface);box-shadow:0 0 0 1px var(--line-strong);cursor:pointer;transition:transform .12s}
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.12)}
+  input[type=range]::-moz-range-thumb{width:17px;height:17px;border-radius:50%;background:var(--buy);border:3px solid var(--surface);cursor:pointer}
+  .ctrl-toggle{display:flex;align-items:center;gap:9px;margin:13px 0;font-size:.88rem;color:var(--ink-soft);cursor:pointer}
+  .ctrl-toggle input{width:17px;height:17px;accent-color:var(--buy);cursor:pointer;flex-shrink:0}
+  .hint{font-size:.74rem;color:var(--ink-faint);margin-top:5px;line-height:1.45}
+
+  .results{min-width:0;animation:fadeUp .7s .16s ease both}
+  .res-title{font-family:var(--display);font-weight:500;font-size:1.18rem;letter-spacing:-.01em;margin:30px 0 12px}
+  .res-title:first-child{margin-top:0}
+
+  .grid-4{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px}
+  .grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:11px}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:520px){.grid-2{grid-template-columns:1fr}}
+
+  .metric{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:15px 16px;transition:transform .15s,border-color .15s}
+  .metric:hover{transform:translateY(-2px);border-color:var(--line-strong)}
+  .metric-label{font-size:.77rem;color:var(--ink-faint);margin-bottom:6px;line-height:1.3}
+  .metric-value{font-family:var(--mono);font-size:1.32rem;font-weight:500;color:var(--ink);transition:color .2s}
+  .metric-value.big{font-size:1.5rem}
+  .metric-sub{font-size:.72rem;color:var(--ink-faint);margin-top:6px;line-height:1.4}
+
+  .box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:18px 20px;margin-top:11px}
+  .box-title{font-weight:600;font-size:.92rem;margin-bottom:11px;display:flex;align-items:center;gap:8px}
+  .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+  .row{display:flex;justify-content:space-between;gap:14px;font-size:.87rem;padding:3.5px 0}
+  .row .l{color:var(--ink-soft)}
+  .row .r{font-family:var(--mono);font-size:.84rem;white-space:nowrap}
+  .row.total{border-top:1px solid var(--line);margin-top:6px;padding-top:8px;font-weight:600}
+  .row.total .r{font-weight:500}
+
+  .pill{display:inline-block;font-size:.72rem;padding:3px 9px;border-radius:6px;margin-top:9px;font-weight:500}
+  .pill.info{background:var(--invest-soft);color:var(--invest)}
+  .pill.warn{background:var(--warn-soft);color:var(--warn)}
+  .badge{display:inline-block;font-size:.7rem;padding:2px 8px;border-radius:6px;margin-left:6px;font-family:var(--sans);font-weight:500;vertical-align:middle}
+  .badge.win{background:var(--invest-soft);color:var(--invest)}
+  .badge.lose{background:var(--buy-soft);color:var(--buy)}
+
+  .verdict-banner{border-radius:var(--r-lg);padding:24px 26px;border:1.5px solid var(--line-strong);background:var(--surface-2);transition:border-color .2s,background .2s}
+  .vb-eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px}
+  .vb-headline{font-family:var(--display);font-weight:500;font-size:clamp(1.5rem,4vw,2.1rem);line-height:1.1;letter-spacing:-.01em;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .vb-delta{font-family:var(--mono);font-size:1.15rem;font-weight:500}
+  .vb-totals{display:flex;gap:26px;flex-wrap:wrap;margin:18px 0 16px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .vb-tot-label{font-size:.76rem;color:var(--ink-faint);margin-bottom:3px}
+  .vb-tot-val{font-family:var(--mono);font-size:1.25rem;font-weight:500}
+  .vb-text{font-size:.92rem;color:var(--ink-soft);line-height:1.6}
+  .vb-text strong{color:var(--ink);font-weight:500}
+
+  .note{font-size:.86rem;color:var(--ink-soft);line-height:1.6;margin-top:14px;padding:14px 16px;background:var(--surface-2);border-radius:var(--r-md);border:1px solid var(--line)}
+
+  .notes{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);font-size:.82rem;color:var(--ink-faint);line-height:1.6}
+  .notes h3{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:12px;font-weight:500}
+  .notes p{margin-bottom:9px;max-width:74ch}
+  .notes strong{color:var(--ink-soft);font-weight:500}
+
+  .pos{color:var(--pos)} .neg{color:var(--neg)} .warnc{color:var(--warn)}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="eyebrow">Hillerød · DKK · horizonte 10 años</div>
+    <h1>Comprar <span class="vs">vs.</span> invertir</h1>
+    <div class="split-rule"><span class="a"></span><span class="b"></span></div>
+    <p class="hero-sub">Un comparador honesto para tu situación: vivir en el piso unos años, alquilarlo desde el extranjero, y contar todos los impuestos daneses y el coste real de ser propietario.</p>
+  </header>
+
+  <div class="layout">
+
+    <aside class="controls">
+      <div class="cg-title">Inmueble y préstamo</div>
+      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Precio de compra</span><span class="ctrl-val" id="o-price">2.500.000 kr</span></div><input type="range" min="1500000" max="5000000" step="50000" value="2500000" id="price"></div>
+      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Tipo realkredit (fijo)</span><span class="ctrl-val" id="o-rate">4,6%</span></div><input type="range" min="3.0" max="6.5" step="0.1" value="4.6" id="rate"></div>
+      <label class="ctrl-toggle"><input type="checkbox" id="ionly" checked> Solo intereses los primeros 10 años (afdragsfrit)</label>
+
+      <div class="cg-title">Tu alquiler actual (fase de residencia)</div>
+      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Alquiler mensual actual</span><span class="ctrl-val" id="o-rent">4.082 kr/mes</span></div><input type="range" min="2000" max="20000" step="1" value="4082" id="rent"></div>
+      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Subida anual del alquiler</span><span class="ctrl-val" id="o-rentinc">2,3%</span></div><input type="range" min="0" max="6" step="0.1" value="2.3" id="rentinc"></div>
+      <p class="hint">Próxima subida en enero 2027, luego cada enero. Solo cuenta mientras vives en Dinamarca.</p>
+
+      <div class="cg-title">¿Te mudas fuera y lo alquilas?</div>
+      <label class="ctrl-toggle"><input type="checkbox" id="rentout" checked> Sí — me mudo al extranjero y lo alquilo</label>
+      <div id="rentout-inputs">
+        <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Te mudas / empiezas a alquilar en el año</span><span class="ctrl-val" id="o-moveyr">Año 3</span></div><input type="range" min="1" max="9" step="1" value="3" id="moveyr"></div>
+        <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Ingreso mensual por alquiler</span><span class="ctrl-val" id="o-rentrecv">12.000 kr</span></div><input type="range" min="6000" max="22000" step="500" value="12000" id="rentinc-recv"></div>
+        <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Costes de casero (% del alquiler)</span><span class="ctrl-val" id="o-landcost">15%</span></div><input type="range" min="0" max="30" step="1" value="15" id="landcost"></div>
+        <p class="hint">Periodos vacíos + gestión (estás fuera) + mantenimiento. Una agencia se lleva ~8–10% solo de gestión.</p>
+        <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Impuesto sobre beneficio neto</span><span class="ctrl-val" id="o-renttax">37%</span></div><input type="range" min="0" max="50" step="1" value="37" id="renttax"></div>
+        <p class="hint">Estimación. Como casero no residente, intereses y costes son deducibles; el beneficio neto tributa como kapitalindkomst. Confírmalo con un revisor.</p>
+      </div>
+
+      <div class="cg-title">Gastos de propietario (ejerudgift)</div>
+      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Ejerudgift al año</span><span class="ctrl-val" id="o-ejud">30.000 kr/año</span></div><input type="range" min="10000" max="80000" step="1000" value="30000" id="ejud"></div>
+      <p class="hint">El total anual que verás en Boliga/Boligsiden — ejendomsværdiskat, grundskyld, husforsikring, ejerforening.</p>
+
+      <div class="cg-title">Crecimiento e impuestos</div>
+      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Revalorización anual</span><span class="ctrl-val" id="o-appr">3,5%</span></div><input type="range" min="0" max="8" step="0.5" value="3.5" id="appr"></div>
+      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Rentefradrag (propietario)</span><span class="ctrl-val" id="o-frad">33%</span></div><input type="range" min="25" max="33" step="1" value="33" id="frad"></div>
+      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Rentabilidad inversión (antes de imp.)</span><span class="ctrl-val" id="o-inv">6,5%</span></div><input type="range" min="3" max="10" step="0.5" value="6.5" id="inv"></div>
+      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Umbral aktieskat (27% debajo)</span><span class="ctrl-val" id="o-aktthresh">61.000 kr</span></div><input type="range" min="50000" max="120000" step="1000" value="61000" id="aktthresh"></div>
+      <p class="hint">Ganancias de inversión: 27% hasta el umbral, 42% por encima — lagerbeskattet cada año. La ganancia del piso se trata abajo.</p>
+
+      <div class="cg-title">Venta en el año 10</div>
+      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Comisión de agente (mægler)</span><span class="ctrl-val" id="o-agent">2,0% de la venta</span></div><input type="range" min="1.0" max="4.0" step="0.25" value="2.0" id="agentfee"></div>
+      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Tinglysning + otros costes</span><span class="ctrl-val" id="o-sellfix">40.000 kr</span></div><input type="range" min="20000" max="80000" step="5000" value="40000" id="sellfix"></div>
+      <label class="ctrl-toggle"><input type="checkbox" id="parcelhus" checked> Venta libre de impuestos (aplica parcelhusreglen)</label>
+      <div id="gaintax-row" style="display:none">
+        <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Impuesto sobre la ganancia (si no exento)</span><span class="ctrl-val" id="o-gaintax">42%</span></div><input type="range" min="0" max="50" step="1" value="42" id="gaintax"></div>
+        <p class="hint">Alquilar a largo plazo puede hacer perder la exención — desactívalo para ver el escenario con impuesto.</p>
+      </div>
+    </aside>
+
+    <main class="results">
+      <div id="verdict-banner"></div>
+
+      <h2 class="res-title">Resumen mensual — fase de residencia (año 1)</h2>
+      <div class="grid-4" id="cards"></div>
+
+      <h2 class="res-title">Flujo de caja mensual — comparativa fase de residencia (año 1)</h2>
+      <div id="breakdown"></div>
+
+      <div id="rental-econ"></div>
+      <div id="sell-section"></div>
+
+      <div id="living-note"></div>
+    </main>
+  </div>
+
+  <footer class="notes">
+    <h3>Notas y supuestos</h3>
+    <p><strong>Esto no es asesoramiento financiero ni fiscal.</strong> Es una herramienta de planificación con estimaciones. Los números reales dependen de tu situación concreta, del inmueble y de la normativa vigente.</p>
+    <p><strong>Sistema 5/15/80:</strong> se asume 5% de entrada en efectivo, 75% vía realkredit y 15% vía préstamo bancario (a un tipo ~1,5 puntos por encima del realkredit), es decir un 20% de capital propio total.</p>
+    <p><strong>Parcelhusreglen:</strong> la venta de la vivienda habitual está exenta de impuestos, pero alquilarla durante años puede comprometer esa exención. Es el punto más incierto del cálculo — verifícalo con un revisor antes de decidir.</p>
+    <p><strong>Impuesto del alquiler:</strong> tributación como casero no residente simplificada a un tipo único sobre el beneficio neto (intereses, ejerudgift y costes deducidos). En la práctica es más matizado.</p>
+    <p><strong>Inversión:</strong> rentabilidad constante con aktieskat aplicado cada año sobre la ganancia (lagerbeskatning, 27% / 42%). En la realidad la rentabilidad varía año a año.</p>
+  </footer>
+</div>
+
+<script>
+  const fmt = n => Math.round(n).toLocaleString('da-DK');
+  const fmtP = n => n.toFixed(1).replace('.', ',') + '%';
+
+  function mpmt(P, ar, yrs){ const r=ar/100/12, n=yrs*12; if(r===0) return P/n; return P*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1); }
+  function aktieskat(gain, thresh){ if(gain<=0) return 0; const lo=Math.min(gain,thresh), hi=Math.max(0,gain-thresh); return lo*0.27+hi*0.42; }
+  function simulate(lump, contribs, ar, years, thresh){
+    let port=lump, r=ar/100;
+    for(let y=0;y<years;y++){
+      const c=contribs[y]||0, start=port;
+      port = port*(1+r) + c*(1+r/2);
+      const gain = Math.max(0, start*r + c*(r/2));
+      port -= aktieskat(gain, thresh);
+    }
+    return port;
+  }
+  function buildRent(base, inc, months){
+    const s=[]; let first=7, cur=base;
+    for(let m=0;m<months;m++){
+      s.push(cur);
+      if(m===first-1){ cur=cur*(1+inc/100); }
+      else { const af=m-first+1; if(af>0 && af%12===0) cur=cur*(1+inc/100); }
+    }
+    return s;
+  }
+  const v=id=>document.getElementById(id).value;
+  const c=id=>document.getElementById(id).checked;
+  const t=(id,val)=>document.getElementById(id).textContent=val;
+
+  function update(){
+    const price=+v('price'), rate=+v('rate'), ionly=c('ionly'),
+      baseRent=+v('rent'), rentInc=+v('rentinc'),
+      rentout=c('rentout'), moveYr=+v('moveyr'), rentRecv=+v('rentinc-recv'),
+      landCost=+v('landcost'), rentTax=+v('renttax'),
+      ejud=+v('ejud'), appr=+v('appr'), frad=+v('frad'), inv=+v('inv'), aktThresh=+v('aktthresh'),
+      agentfee=+v('agentfee'), sellfix=+v('sellfix'), parcelhus=c('parcelhus'), gaintax=+v('gaintax');
+
+    t('o-price',fmt(price)+' kr'); t('o-rate',fmtP(rate)); t('o-rent',fmt(baseRent)+' kr/mes');
+    t('o-rentinc',fmtP(rentInc)); t('o-moveyr','Año '+moveYr); t('o-rentrecv',fmt(rentRecv)+' kr');
+    t('o-landcost',landCost+'%'); t('o-renttax',rentTax+'%'); t('o-ejud',fmt(ejud)+' kr/año');
+    t('o-appr',fmtP(appr)); t('o-frad',frad+'%'); t('o-inv',fmtP(inv));
+    t('o-aktthresh',fmt(aktThresh)+' kr'); t('o-agent',fmtP(agentfee)+' de la venta'); t('o-sellfix',fmt(sellfix)+' kr');
+    t('o-gaintax',gaintax+'%');
+    document.getElementById('rentout-inputs').style.display = rentout?'':'none';
+    document.getElementById('gaintax-row').style.display = parcelhus?'none':'';
+
+    const moveOut = rentout ? moveYr : 10;
+    const rkLoan=price*0.75, bankLoan=price*0.15, downPmt=price*0.20, bankRate=Math.min(rate+1.5,7.5);
+    const rkInt=rkLoan*(rate/100)/12, bankInt=bankLoan*(bankRate/100)/12;
+    const taxSave=(rkInt+bankInt)*(frad/100), ejudMo=ejud/12;
+    const bankPmt=mpmt(bankLoan,bankRate,20), rkPmtFull=mpmt(rkLoan,rate,30), rkPmtPh2=mpmt(rkLoan,rate,20);
+
+    const ownMo=(ionly?rkInt:rkPmtFull)+bankPmt+ejudMo-taxSave;
+    const ownMoPh2=rkPmtPh2+bankPmt+ejudMo-taxSave;
+    const apprMo=price*appr/100/12;
+    const netCost=ownMo-apprMo;
+
+    const rentSched=buildRent(baseRent,rentInc,120);
+    const rentYr1=rentSched[0];
+    const rentAtMove=rentSched[Math.min((moveOut-1)*12,119)];
+
+    const opCosts=rentRecv*(landCost/100);
+    const mortgageRental=(ionly?rkInt:rkPmtFull)+bankPmt;
+    const interestDeductible=rkInt+bankInt;
+    const taxableRental=rentRecv-opCosts-ejudMo-interestDeductible;
+    const rentalTaxMo=Math.max(0,taxableRental)*(rentTax/100);
+    const netRentalMo=rentRecv-opCosts-ejudMo-mortgageRental-rentalTaxMo;
+
+    document.getElementById('cards').innerHTML=`
+      <div class="metric"><div class="metric-label">Salida de caja/mes (compra)</div>
+        <div class="metric-value neg">${fmt(ownMo)} kr</div><div class="metric-sub">tras rentefradrag, sin revalorización</div></div>
+      <div class="metric"><div class="metric-label">Coste neto real/mes (caja − reval.)</div>
+        <div class="metric-value ${netCost<rentYr1?'pos':'neg'}">${fmt(netCost)} kr</div>
+        <div class="metric-sub">vs alquiler ${fmt(rentYr1)} kr → ${fmt(rentAtMove)} kr al mudarte</div></div>
+      <div class="metric"><div class="metric-label">Ganancia por revalorización/mes</div>
+        <div class="metric-value pos">${fmt(apprMo)} kr</div><div class="metric-sub">${fmtP(appr)}/año — libre de impuestos si exenta</div></div>
+      <div class="metric"><div class="metric-label">${rentout?'Flujo neto del alquiler/mes':'Coste compra año 11+'}</div>
+        <div class="metric-value ${rentout?(netRentalMo>=0?'pos':'neg'):'warnc'}">${rentout?(netRentalMo>=0?'+':'')+fmt(netRentalMo)+' kr':fmt(ownMoPh2)+' kr'}</div>
+        <div class="metric-sub">${rentout?'alquiler menos todos los costes e impuestos':'cuando empieza la amortización'}</div></div>`;
+
+    const diffYr1=rentYr1-ownMo;
+    const bSurp1=diffYr1>0?diffYr1:0, rSurp1=diffYr1<0?-diffYr1:0;
+    document.getElementById('breakdown').innerHTML=`
+      <div class="grid-2">
+        <div class="box"><div class="box-title"><span class="dot" style="background:var(--buy)"></span>Comprando</div>
+          <div class="row"><span class="l">Intereses realkredit</span><span class="r">${fmt(rkInt)} kr</span></div>
+          ${!ionly?`<div class="row"><span class="l">Principal realkredit</span><span class="r">${fmt(rkPmtFull-rkInt)} kr</span></div>`:''}
+          <div class="row"><span class="l">Préstamo banco (${fmtP(bankRate)})</span><span class="r">${fmt(bankPmt)} kr</span></div>
+          <div class="row"><span class="l">Ejerudgift/mes</span><span class="r">${fmt(ejudMo)} kr</span></div>
+          <div class="row"><span class="l pos">Rentefradrag (${frad}%)</span><span class="r pos">−${fmt(taxSave)} kr</span></div>
+          <div class="row total"><span class="l">Salida de caja</span><span class="r">${fmt(ownMo)} kr</span></div>
+          ${bSurp1>0?`<div class="row" style="margin-top:4px"><span class="l pos">Excedente invertido</span><span class="r pos">${fmt(bSurp1)} kr/mes</span></div>`:''}</div>
+        <div class="box"><div class="box-title"><span class="dot" style="background:var(--invest)"></span>Alquilando / invirtiendo</div>
+          <div class="row"><span class="l">Alquiler mensual</span><span class="r">${fmt(rentYr1)} kr</span></div>
+          <div class="row total"><span class="l">Salida de caja</span><span class="r">${fmt(rentYr1)} kr</span></div>
+          ${rSurp1>0?`<div class="row" style="margin-top:4px"><span class="l pos">Excedente invertido</span><span class="r pos">${fmt(rSurp1)} kr/mes</span></div>`:''}
+          <div class="row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)"><span class="l" style="font-size:.8rem;color:var(--ink-faint)">Entrada ${fmt(downPmt)} kr invertida al ${fmtP(inv)}/año</span></div></div>
+      </div>`;
+
+    const re=document.getElementById('rental-econ');
+    if(!rentout){ re.innerHTML=''; }
+    else {
+      re.innerHTML=`
+        <h2 class="res-title">Economía como casero — del año ${moveOut} al 10 (estás fuera)</h2>
+        <div class="box">
+          <div class="box-title">Flujo de caja mensual del alquiler</div>
+          <div class="row"><span class="l">Alquiler recibido</span><span class="r pos">+${fmt(rentRecv)} kr</span></div>
+          <div class="row"><span class="l">Costes de casero (${landCost}%: vacíos, gestión, mant.)</span><span class="r neg">−${fmt(opCosts)} kr</span></div>
+          <div class="row"><span class="l">Ejerudgift</span><span class="r neg">−${fmt(ejudMo)} kr</span></div>
+          <div class="row"><span class="l">Cuota hipoteca (realkredit ${ionly?'intereses':'+ principal'} + banco)</span><span class="r neg">−${fmt(mortgageRental)} kr</span></div>
+          <div class="row"><span class="l">Impuesto beneficio neto (${rentTax}% de ${fmt(Math.max(0,taxableRental))} kr)</span><span class="r neg">−${fmt(rentalTaxMo)} kr</span></div>
+          <div class="row total ${netRentalMo>=0?'pos':'neg'}"><span class="l">Flujo de caja neto del alquiler</span><span class="r ${netRentalMo>=0?'pos':'neg'}">${netRentalMo>=0?'+':''}${fmt(netRentalMo)} kr/mes</span></div>
+          ${netRentalMo>=0?`<span class="pill info">Positivo — se invierte cada mes al ${fmtP(inv)}/año</span>`:`<span class="pill warn">Negativo — la revalorización debe compensar. Habitual con 20% de entrada a tipos del ${fmtP(rate)}.</span>`}
+        </div>`;
+    }
+
+    const buyerC=[], investC=[];
+    for(let y=0;y<10;y++){
+      if(y<moveOut){ const ry=rentSched[Math.min(y*12,119)], d=ry-ownMo;
+        buyerC.push((d>0?d:0)*12); investC.push((d<0?-d:0)*12);
+      } else { buyerC.push(netRentalMo*12); investC.push(0); }
+    }
+    const buyerPort=simulate(0,buyerC,inv,10,aktThresh);
+    const investPort=simulate(downPmt,investC,inv,10,aktThresh);
+
+    const salePrice=price*Math.pow(1+appr/100,10);
+    const agentCost=salePrice*(agentfee/100);
+    const netProceeds=salePrice-agentCost-sellfix;
+    const bankPrinPaid=(bankPmt-bankInt)*120;
+    const rkBalance=ionly?rkLoan:(rkLoan-(rkPmtFull-rkInt)*120);
+    const bankBalance=Math.max(0,bankLoan-bankPrinPaid);
+    const totalDebt=rkBalance+bankBalance;
+    const gain=salePrice-price;
+    const propGainTax=parcelhus?0:Math.max(0,gain)*(gaintax/100);
+    const cashInPocket=netProceeds-totalDebt-propGainTax;
+
+    const buyerTotal=cashInPocket+buyerPort;
+    const advantage=buyerTotal-investPort;
+    const won=advantage>=0;
+    const compareLabel = rentout ? 'comprar + alquilar vs. invertir' : 'comprar vs. invertir';
+
+    document.getElementById('sell-section').innerHTML=`
+      <h2 class="res-title">Venta en el año 10 — ingresos y cancelación de deuda</h2>
+      <div class="box">
+        <div class="row"><span class="l">Precio de venta (${fmtP(appr)}/año × 10 años)</span><span class="r">${fmt(salePrice)} kr</span></div>
+        <div class="row"><span class="l neg">Comisión agente (${fmtP(agentfee)})</span><span class="r neg">−${fmt(agentCost)} kr</span></div>
+        <div class="row"><span class="l neg">Tinglysning y costes de venta</span><span class="r neg">−${fmt(sellfix)} kr</span></div>
+        ${!parcelhus?`<div class="row"><span class="l neg">Impuesto ganancia (${gaintax}% de ${fmt(gain)} kr)</span><span class="r neg">−${fmt(propGainTax)} kr</span></div>`:''}
+        <div class="row"><span class="l neg">Saldo realkredit${ionly?' (solo intereses)':''}</span><span class="r neg">−${fmt(rkBalance)} kr</span></div>
+        <div class="row"><span class="l neg">Saldo restante préstamo banco</span><span class="r neg">−${fmt(bankBalance)} kr</span></div>
+        <div class="row total ${cashInPocket>0?'pos':'neg'}"><span class="l">Dinero neto del piso</span><span class="r ${cashInPocket>0?'pos':'neg'}">${fmt(cashInPocket)} kr</span></div>
+        ${parcelhus?`<span class="pill info">Ganancia libre de impuestos — parcelhusreglen ✓</span>`:`<span class="pill warn">Ganancia con impuesto — exención asumida como perdida</span>`}
+      </div>
+
+      <h2 class="res-title">Patrimonio total en el año 10 — después de impuestos</h2>
+      <div class="grid-3">
+        <div class="metric"><div class="metric-label">Comprador: dinero de la venta</div><div class="metric-value pos">${fmt(cashInPocket)} kr</div><div class="metric-sub">${parcelhus?'ganancia libre de impuestos':'tras impuesto sobre ganancia'}</div></div>
+        <div class="metric"><div class="metric-label">Comprador: inversiones (tras aktieskat)</div><div class="metric-value pos">${fmt(buyerPort)} kr</div><div class="metric-sub">${rentout?'excedente + flujo del alquiler':'excedente mensual'}, compuesto</div></div>
+        <div class="metric"><div class="metric-label">Patrimonio total comprador</div><div class="metric-value pos big">${fmt(buyerTotal)} kr</div><div class="metric-sub">piso + inversiones</div></div>
+      </div>
+      <div class="grid-3" style="margin-top:11px">
+        <div class="metric"><div class="metric-label">Inversor: cartera (tras aktieskat)</div><div class="metric-value" style="color:var(--ink)">${fmt(investPort)} kr</div><div class="metric-sub">${fmt(downPmt)} kr entrada + excedente, gravado anual</div></div>
+        <div class="metric"><div class="metric-label">Diferencia</div><div class="metric-value ${won?'pos':'neg'}">${won?'+':'−'}${fmt(Math.abs(advantage))} kr</div><div class="metric-sub">${won?'comprar va por delante':'invertir va por delante'}</div></div>
+        <div class="metric"><div class="metric-label">Veredicto</div><div class="metric-value ${won?'pos':'neg'}" style="font-size:1.05rem">${won?'Gana comprar':'Gana invertir'}</div><div class="metric-sub">${compareLabel}</div></div>
+      </div>`;
+
+    document.getElementById('verdict-banner').innerHTML=`
+      <div class="verdict-banner" style="border-color:${won?'var(--invest)':'var(--buy)'};background:${won?'var(--invest-soft)':'var(--buy-soft)'}">
+        <div class="vb-eyebrow">Veredicto a 10 años · ${compareLabel}</div>
+        <div class="vb-headline">${won?'Gana comprar':'Gana invertir'}<span class="vb-delta ${won?'pos':'neg'}">${won?'+':'−'}${fmt(Math.abs(advantage))} kr</span></div>
+        <div class="vb-totals">
+          <div><div class="vb-tot-label">Comprador</div><div class="vb-tot-val">${fmt(buyerTotal)} kr</div></div>
+          <div><div class="vb-tot-label">Inversor</div><div class="vb-tot-val">${fmt(investPort)} kr</div></div>
+        </div>
+        <p class="vb-text">${rentout?`Vives en el piso ${moveOut} años y lo alquilas del año ${moveOut} al 10 mientras estás fuera. `:``}El comprador termina con <strong>${fmt(buyerTotal)} kr</strong> (venta ${parcelhus?'libre de impuestos':'tras impuesto'} + inversiones); el inversor con <strong>${fmt(investPort)} kr</strong>.
+        ${won?`Comprar gana por <strong>${fmt(advantage)} kr</strong>${rentout&&netRentalMo<0?' — aunque el alquiler dé flujo negativo, la revalorización apalancada y libre de impuestos lo compensa de sobra':' — la revalorización apalancada y la venta exenta tiran del resultado'}.`:`Invertir gana por <strong>${fmt(Math.abs(advantage))} kr</strong>${rentout&&netRentalMo<0?' — el flujo de caja negativo del alquiler lastra al comprador más rápido de lo que la revalorización suma':''}.`}
+        ${ionly?' Con solo intereses, el principal del realkredit no se amortiza nunca — todo el capital propio viene de la revalorización.':''}</p>
+      </div>`;
+
+    document.getElementById('living-note').innerHTML=`
+      <div class="note">${netCost<rentYr1?`El coste neto real de comprar (${fmt(netCost)} kr/mes) ya es menor que tu alquiler de ${fmt(rentYr1)} kr.`:`Comprar cuesta ${fmt(ownMo)} kr/mes frente a tu alquiler de ${fmt(rentYr1)} kr; el lado más barato invierte la diferencia.`}${rentout?` Desde el año ${moveOut} pasas a modo casero — mira el desglose arriba.`:''}</div>`;
+  }
+
+  ['price','rate','rent','rentinc','moveyr','rentinc-recv','landcost','renttax','ejud','appr','frad','inv','aktthresh','agentfee','sellfix','gaintax'].forEach(id=>document.getElementById(id).addEventListener('input',update));
+  ['ionly','rentout','parcelhus'].forEach(id=>document.getElementById(id).addEventListener('change',update));
+  update();
+</script>
+</body>
+</html>
