@@ -150,8 +150,10 @@
       </div>
 
       <div class="cg-title">Gastos de propietario (ejerudgift)</div>
-      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Ejerudgift al año</span><span class="ctrl-val" id="o-ejud">30.000 kr/año</span></div><input type="range" min="10000" max="80000" step="1000" value="30000" id="ejud"></div>
-      <p class="hint">El total anual de Boliga/Boligsiden — incluye ejendomsværdiskat, grundskyld, <strong>husforsikring</strong> y ejerforening. La husforsikring se cuenta aquí cada año (también el 1º), no como coste único.</p>
+      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Ejerudgift al año (sin seguro)</span><span class="ctrl-val" id="o-ejud">30.000 kr/año</span></div><input type="range" min="10000" max="80000" step="1000" value="30000" id="ejud"></div>
+      <p class="hint">ejendomsværdiskat, grundskyld, ejerforening, renovación. <strong>Sin</strong> la husforsikring — esa va aparte abajo.</p>
+      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Husforsikring (al año)</span><span class="ctrl-val" id="o-husfors">5.000 kr/año</span></div><input type="range" min="0" max="15000" step="500" value="5000" id="husfors"></div>
+      <p class="hint">Seguro del hogar (recurrente, todos los años). Si tu ejerudgift de Boliga ya lo incluye, pon 0 aquí para no contarlo dos veces.</p>
 
       <div class="cg-title">Crecimiento e impuestos</div>
       <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Revalorización anual</span><span class="ctrl-val" id="o-appr">3,5%</span></div><input type="range" min="0" max="8" step="0.5" value="3.5" id="appr"></div>
@@ -231,7 +233,7 @@
       baseRent=+v('rent'), rentInc=+v('rentinc'),
       rentout=c('rentout'), moveYr=+v('moveyr'), rentRecv=+v('rentinc-recv'),
       landCost=+v('landcost'), rentTax=+v('renttax'),
-      ejud=+v('ejud'), appr=+v('appr'), frad=+v('frad'), inv=+v('inv'), aktThresh=+v('aktthresh'),
+      ejud=+v('ejud'), husfors=+v('husfors'), appr=+v('appr'), frad=+v('frad'), inv=+v('inv'), aktThresh=+v('aktthresh'),
       agentfee=+v('agentfee'), sellfix=+v('sellfix'), parcelhus=c('parcelhus'), gaintax=+v('gaintax');
 
     t('o-price',fmt(price)+' kr'); t('o-rate',fmtP(rate)); t('o-rent',fmt(baseRent)+' kr/mes');
@@ -239,7 +241,7 @@
     t('o-landcost',landCost+'%'); t('o-renttax',rentTax+'%'); t('o-ejud',fmt(ejud)+' kr/año');
     t('o-appr',fmtP(appr)); t('o-frad',frad+'%'); t('o-inv',fmtP(inv));
     t('o-aktthresh',fmt(aktThresh)+' kr'); t('o-agent',fmtP(agentfee)+' de la venta'); t('o-sellfix',fmt(sellfix)+' kr');
-    t('o-gaintax',gaintax+'%');
+    t('o-gaintax',gaintax+'%'); t('o-husfors',fmt(husfors)+' kr/año');
     document.getElementById('rentout-inputs').style.display = rentout?'':'none';
     document.getElementById('gaintax-row').style.display = parcelhus?'none':'';
 
@@ -257,11 +259,11 @@
     const buyingCosts=deedTax+mortgageTax+buyFix;
     t('o-buyfix',fmt(buyFix)+' kr');
     t('buycost-note',`Costes totales de compra ≈ ${fmt(buyingCosts)} kr: tinglysning del skøde (0,6% = ${fmt(deedTax)} kr) + del préstamo (1,25% = ${fmt(mortgageTax)} kr) + abogado/realkredit. No se recuperan — el inversor los invierte en su lugar.`);
-    const taxSave=(rkInt+bankInt)*(frad/100), ejudMo=ejud/12;
+    const taxSave=(rkInt+bankInt)*(frad/100), ejudMo=ejud/12, husforsMo=husfors/12;
     const bankPmt=mpmt(bankLoan,bankRate,20), rkPmtFull=mpmt(rkLoan,rate,30), rkPmtPh2=mpmt(rkLoan,rate,20);
 
-    const ownMo=(ionly?rkInt:rkPmtFull)+bankPmt+ejudMo-taxSave;
-    const ownMoPh2=rkPmtPh2+bankPmt+ejudMo-taxSave;
+    const ownMo=(ionly?rkInt:rkPmtFull)+bankPmt+ejudMo+husforsMo-taxSave;
+    const ownMoPh2=rkPmtPh2+bankPmt+ejudMo+husforsMo-taxSave;
     const apprMo=price*appr/100/12;
     const netCost=ownMo-apprMo;
 
@@ -272,9 +274,9 @@
     const opCosts=rentRecv*(landCost/100);
     const mortgageRental=(ionly?rkInt:rkPmtFull)+bankPmt;
     const interestDeductible=rkInt+bankInt;
-    const taxableRental=rentRecv-opCosts-ejudMo-interestDeductible;
+    const taxableRental=rentRecv-opCosts-ejudMo-husforsMo-interestDeductible;
     const rentalTaxMo=Math.max(0,taxableRental)*(rentTax/100);
-    const netRentalMo=rentRecv-opCosts-ejudMo-mortgageRental-rentalTaxMo;
+    const netRentalMo=rentRecv-opCosts-ejudMo-husforsMo-mortgageRental-rentalTaxMo;
 
     document.getElementById('cards').innerHTML=`
       <div class="metric"><div class="metric-label">Salida de caja/mes (compra)</div>
@@ -297,6 +299,7 @@
           ${!ionly?`<div class="row"><span class="l">Principal realkredit</span><span class="r">${fmt(rkPmtFull-rkInt)} kr</span></div>`:''}
           ${hasBank?`<div class="row"><span class="l">Préstamo banco (${fmtP(bankRate)})</span><span class="r">${fmt(bankPmt)} kr</span></div>`:''}
           <div class="row"><span class="l">Ejerudgift/mes</span><span class="r">${fmt(ejudMo)} kr</span></div>
+          <div class="row"><span class="l">Husforsikring/mes</span><span class="r">${fmt(husforsMo)} kr</span></div>
           <div class="row"><span class="l pos">Rentefradrag (${frad}%)</span><span class="r pos">−${fmt(taxSave)} kr</span></div>
           <div class="row total"><span class="l">Salida de caja</span><span class="r">${fmt(ownMo)} kr</span></div>
           ${bSurp1>0?`<div class="row" style="margin-top:4px"><span class="l pos">Excedente invertido</span><span class="r pos">${fmt(bSurp1)} kr/mes</span></div>`:''}</div>
@@ -317,6 +320,7 @@
           <div class="row"><span class="l">Alquiler recibido</span><span class="r pos">+${fmt(rentRecv)} kr</span></div>
           <div class="row"><span class="l">Costes de casero (${landCost}%: vacíos, gestión, mant.)</span><span class="r neg">−${fmt(opCosts)} kr</span></div>
           <div class="row"><span class="l">Ejerudgift</span><span class="r neg">−${fmt(ejudMo)} kr</span></div>
+          <div class="row"><span class="l">Husforsikring</span><span class="r neg">−${fmt(husforsMo)} kr</span></div>
           <div class="row"><span class="l">Cuota hipoteca (realkredit ${ionly?'intereses':'+ principal'}${hasBank?' + banco':''})</span><span class="r neg">−${fmt(mortgageRental)} kr</span></div>
           <div class="row"><span class="l">Impuesto beneficio neto (${rentTax}% de ${fmt(Math.max(0,taxableRental))} kr)</span><span class="r neg">−${fmt(rentalTaxMo)} kr</span></div>
           <div class="row total ${netRentalMo>=0?'pos':'neg'}"><span class="l">Flujo de caja neto del alquiler</span><span class="r ${netRentalMo>=0?'pos':'neg'}">${netRentalMo>=0?'+':''}${fmt(netRentalMo)} kr/mes</span></div>
@@ -391,7 +395,7 @@
       <div class="note">${netCost<rentYr1?`El coste neto real de comprar (${fmt(netCost)} kr/mes) ya es menor que tu alquiler de ${fmt(rentYr1)} kr.`:`Comprar cuesta ${fmt(ownMo)} kr/mes frente a tu alquiler de ${fmt(rentYr1)} kr; el lado más barato invierte la diferencia.`}${rentout?` Desde el año ${moveOut} pasas a modo casero — mira el desglose arriba.`:''}</div>`;
   }
 
-  ['price','rate','down','buyfix','rent','rentinc','moveyr','rentinc-recv','landcost','renttax','ejud','appr','frad','inv','aktthresh','agentfee','sellfix','gaintax'].forEach(id=>document.getElementById(id).addEventListener('input',update));
+  ['price','rate','down','buyfix','rent','rentinc','moveyr','rentinc-recv','landcost','renttax','ejud','husfors','appr','frad','inv','aktthresh','agentfee','sellfix','gaintax'].forEach(id=>document.getElementById(id).addEventListener('input',update));
   ['ionly','rentout','parcelhus'].forEach(id=>document.getElementById(id).addEventListener('change',update));
   update();
 </script>
