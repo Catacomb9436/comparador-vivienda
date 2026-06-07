@@ -150,10 +150,10 @@
       </div>
 
       <div class="cg-title">Gastos de propietario (ejerudgift)</div>
-      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Ejerudgift al año (sin seguro)</span><span class="ctrl-val" id="o-ejud">30.000 kr/año</span></div><input type="range" min="10000" max="80000" step="1000" value="30000" id="ejud"></div>
-      <p class="hint">ejendomsværdiskat, grundskyld, ejerforening, renovación. <strong>Sin</strong> la husforsikring — esa va aparte abajo.</p>
-      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Husforsikring (al año)</span><span class="ctrl-val" id="o-husfors">5.000 kr/año</span></div><input type="range" min="0" max="15000" step="500" value="5000" id="husfors"></div>
-      <p class="hint">Seguro del hogar (recurrente, todos los años). Si tu ejerudgift de Boliga ya lo incluye, pon 0 aquí para no contarlo dos veces.</p>
+      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Ejerudgift al año</span><span class="ctrl-val" id="o-ejud">30.000 kr/año</span></div><input type="range" min="10000" max="80000" step="1000" value="30000" id="ejud"></div>
+      <p class="hint">Cifra de Boligsiden <strong>× 12</strong> (allí es mensual). Ya incluye ejendomsværdiskat, grundskyld, husforsikring y ejerforening; no incluye luz/agua/calefacción.</p>
+      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Husforsikring extra (al año)</span><span class="ctrl-val" id="o-husfors">0 kr/año</span></div><input type="range" min="0" max="15000" step="500" value="0" id="husfors"></div>
+      <p class="hint">Boligsiden <strong>ya</strong> mete el seguro en la ejerudgift → déjalo en <strong>0</strong>. Úsalo solo si tu cifra de ejerudgift NO lo incluyera.</p>
 
       <div class="cg-title">Crecimiento e impuestos</div>
       <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Revalorización anual</span><span class="ctrl-val" id="o-appr">3,5%</span></div><input type="range" min="0" max="8" step="0.5" value="3.5" id="appr"></div>
@@ -299,7 +299,7 @@
           ${!ionly?`<div class="row"><span class="l">Principal realkredit</span><span class="r">${fmt(rkPmtFull-rkInt)} kr</span></div>`:''}
           ${hasBank?`<div class="row"><span class="l">Préstamo banco (${fmtP(bankRate)})</span><span class="r">${fmt(bankPmt)} kr</span></div>`:''}
           <div class="row"><span class="l">Ejerudgift/mes</span><span class="r">${fmt(ejudMo)} kr</span></div>
-          <div class="row"><span class="l">Husforsikring/mes</span><span class="r">${fmt(husforsMo)} kr</span></div>
+          ${husfors>0?`<div class="row"><span class="l">Husforsikring/mes</span><span class="r">${fmt(husforsMo)} kr</span></div>`:''}
           <div class="row"><span class="l pos">Rentefradrag (${frad}%)</span><span class="r pos">−${fmt(taxSave)} kr</span></div>
           <div class="row total"><span class="l">Salida de caja</span><span class="r">${fmt(ownMo)} kr</span></div>
           ${bSurp1>0?`<div class="row" style="margin-top:4px"><span class="l pos">Excedente invertido</span><span class="r pos">${fmt(bSurp1)} kr/mes</span></div>`:''}</div>
@@ -320,7 +320,7 @@
           <div class="row"><span class="l">Alquiler recibido</span><span class="r pos">+${fmt(rentRecv)} kr</span></div>
           <div class="row"><span class="l">Costes de casero (${landCost}%: vacíos, gestión, mant.)</span><span class="r neg">−${fmt(opCosts)} kr</span></div>
           <div class="row"><span class="l">Ejerudgift</span><span class="r neg">−${fmt(ejudMo)} kr</span></div>
-          <div class="row"><span class="l">Husforsikring</span><span class="r neg">−${fmt(husforsMo)} kr</span></div>
+          ${husfors>0?`<div class="row"><span class="l">Husforsikring</span><span class="r neg">−${fmt(husforsMo)} kr</span></div>`:''}
           <div class="row"><span class="l">Cuota hipoteca (realkredit ${ionly?'intereses':'+ principal'}${hasBank?' + banco':''})</span><span class="r neg">−${fmt(mortgageRental)} kr</span></div>
           <div class="row"><span class="l">Impuesto beneficio neto (${rentTax}% de ${fmt(Math.max(0,taxableRental))} kr)</span><span class="r neg">−${fmt(rentalTaxMo)} kr</span></div>
           <div class="row total ${netRentalMo>=0?'pos':'neg'}"><span class="l">Flujo de caja neto del alquiler</span><span class="r ${netRentalMo>=0?'pos':'neg'}">${netRentalMo>=0?'+':''}${fmt(netRentalMo)} kr/mes</span></div>
