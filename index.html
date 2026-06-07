@@ -129,6 +129,8 @@
       <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Tipo realkredit (fijo)</span><span class="ctrl-val" id="o-rate">4,6%</span></div><input type="range" min="3.0" max="6.5" step="0.1" value="4.6" id="rate"></div>
       <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Entrada (capital propio)</span><span class="ctrl-val" id="o-down">20%</span></div><input type="range" min="5" max="40" step="1" value="20" id="down"></div>
       <p class="hint" id="loan-split">Realkredit 80% · banco 0% · entrada 20%. El realkredit llega hasta el 80%; el banco solo cubre el hueco si pones menos del 20%.</p>
+      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Abogado + realkreditinstitut (únicos)</span><span class="ctrl-val" id="o-buyfix">25.000 kr</span></div><input type="range" min="5000" max="60000" step="1000" value="25000" id="buyfix"></div>
+      <p class="hint" id="buycost-note">Costes totales de compra (con tinglysning) — no se recuperan.</p>
       <label class="ctrl-toggle"><input type="checkbox" id="ionly" checked> Solo intereses los primeros 10 años (afdragsfrit)</label>
 
       <div class="cg-title">Tu alquiler actual (fase de residencia)</div>
@@ -137,8 +139,8 @@
       <p class="hint">Próxima subida en enero 2027, luego cada enero. Solo cuenta mientras vives en Dinamarca.</p>
 
       <div class="cg-title">¿Te mudas fuera y lo alquilas?</div>
-      <label class="ctrl-toggle"><input type="checkbox" id="rentout" checked> Sí — me mudo al extranjero y lo alquilo</label>
-      <div id="rentout-inputs">
+      <label class="ctrl-toggle"><input type="checkbox" id="rentout"> Sí — me mudo al extranjero y lo alquilo</label>
+      <div id="rentout-inputs" style="display:none">
         <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Te mudas / empiezas a alquilar en el año</span><span class="ctrl-val" id="o-moveyr">Año 3</span></div><input type="range" min="1" max="9" step="1" value="3" id="moveyr"></div>
         <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Ingreso mensual por alquiler</span><span class="ctrl-val" id="o-rentrecv">12.000 kr</span></div><input type="range" min="6000" max="22000" step="500" value="12000" id="rentinc-recv"></div>
         <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Costes de casero (% del alquiler)</span><span class="ctrl-val" id="o-landcost">15%</span></div><input type="range" min="0" max="30" step="1" value="15" id="landcost"></div>
@@ -149,7 +151,7 @@
 
       <div class="cg-title">Gastos de propietario (ejerudgift)</div>
       <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Ejerudgift al año</span><span class="ctrl-val" id="o-ejud">30.000 kr/año</span></div><input type="range" min="10000" max="80000" step="1000" value="30000" id="ejud"></div>
-      <p class="hint">El total anual que verás en Boliga/Boligsiden — ejendomsværdiskat, grundskyld, husforsikring, ejerforening.</p>
+      <p class="hint">El total anual de Boliga/Boligsiden — incluye ejendomsværdiskat, grundskyld, <strong>husforsikring</strong> y ejerforening. La husforsikring se cuenta aquí cada año (también el 1º), no como coste único.</p>
 
       <div class="cg-title">Crecimiento e impuestos</div>
       <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Revalorización anual</span><span class="ctrl-val" id="o-appr">3,5%</span></div><input type="range" min="0" max="8" step="0.5" value="3.5" id="appr"></div>
@@ -188,6 +190,7 @@
     <h3>Notas y supuestos</h3>
     <p><strong>Esto no es asesoramiento financiero ni fiscal.</strong> Es una herramienta de planificación con estimaciones. Los números reales dependen de tu situación concreta, del inmueble y de la normativa vigente.</p>
     <p><strong>Estructura del préstamo (5/15/80):</strong> el realkredit financia hasta el 80% del valor; debes aportar al menos un 5% en efectivo; y el banco cubre el hueco entre tu entrada y ese 20% restante (a un tipo ~1,5 puntos por encima del realkredit). Con una entrada del 20% o más, no hace falta préstamo bancario. La entrada es tu capital propio y es lo que se invierte en el escenario alternativo.</p>
+    <p><strong>Costes de compra (únicos):</strong> tinglysning del skøde (0,6% del precio + 1.850 kr) + tinglysning del préstamo (1,25% del principal desde enero 2026 + 1.825 kr) + abogado/asesor y comisiones de constitución del realkreditinstitut. Es dinero que no se recupera; en el modelo lo invierte el inversor en su lugar, por eso penaliza al comprador. La <strong>husforsikring</strong> no va aquí: es un coste recurrente que ya está dentro de la ejerudgift anual (en pisos suele ir en la ejerforening), y se cuenta todos los años incluido el primero.</p>
     <p><strong>Parcelhusreglen:</strong> la venta de la vivienda habitual está exenta de impuestos, pero alquilarla durante años puede comprometer esa exención. Es el punto más incierto del cálculo — verifícalo con un revisor antes de decidir.</p>
     <p><strong>Impuesto del alquiler:</strong> tributación como casero no residente simplificada a un tipo único sobre el beneficio neto (intereses, ejerudgift y costes deducidos). En la práctica es más matizado.</p>
     <p><strong>Inversión:</strong> rentabilidad constante con aktieskat aplicado cada año sobre la ganancia (lagerbeskatning, 27% / 42%). En la realidad la rentabilidad varía año a año.</p>
@@ -248,6 +251,12 @@
     const hasBank=bankLoan>1;
     t('o-down',downPct+'%');
     t('loan-split',`Realkredit ${Math.round(rkPct*100)}% · banco ${Math.round(bankPct*100)}% · entrada ${downPct}%. El realkredit llega hasta el 80%; el banco solo cubre el hueco si pones menos del 20%.`);
+    const buyFix=+v('buyfix');
+    const deedTax=0.006*price+1850;
+    const mortgageTax=0.0125*(rkLoan+bankLoan)+1825;
+    const buyingCosts=deedTax+mortgageTax+buyFix;
+    t('o-buyfix',fmt(buyFix)+' kr');
+    t('buycost-note',`Costes totales de compra ≈ ${fmt(buyingCosts)} kr: tinglysning del skøde (0,6% = ${fmt(deedTax)} kr) + del préstamo (1,25% = ${fmt(mortgageTax)} kr) + abogado/realkredit. No se recuperan — el inversor los invierte en su lugar.`);
     const taxSave=(rkInt+bankInt)*(frad/100), ejudMo=ejud/12;
     const bankPmt=mpmt(bankLoan,bankRate,20), rkPmtFull=mpmt(rkLoan,rate,30), rkPmtPh2=mpmt(rkLoan,rate,20);
 
@@ -295,7 +304,7 @@
           <div class="row"><span class="l">Alquiler mensual</span><span class="r">${fmt(rentYr1)} kr</span></div>
           <div class="row total"><span class="l">Salida de caja</span><span class="r">${fmt(rentYr1)} kr</span></div>
           ${rSurp1>0?`<div class="row" style="margin-top:4px"><span class="l pos">Excedente invertido</span><span class="r pos">${fmt(rSurp1)} kr/mes</span></div>`:''}
-          <div class="row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)"><span class="l" style="font-size:.8rem;color:var(--ink-faint)">Entrada ${fmt(downPmt)} kr invertida al ${fmtP(inv)}/año</span></div></div>
+          <div class="row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)"><span class="l" style="font-size:.8rem;color:var(--ink-faint)">Invierte entrada ${fmt(downPmt)} kr + costes de compra ${fmt(buyingCosts)} kr al ${fmtP(inv)}/año</span></div></div>
       </div>`;
 
     const re=document.getElementById('rental-econ');
@@ -322,7 +331,7 @@
       } else { buyerC.push(netRentalMo*12); investC.push(0); }
     }
     const buyerPort=simulate(0,buyerC,inv,10,aktThresh);
-    const investPort=simulate(downPmt,investC,inv,10,aktThresh);
+    const investPort=simulate(downPmt+buyingCosts,investC,inv,10,aktThresh);
 
     const salePrice=price*Math.pow(1+appr/100,10);
     const agentCost=salePrice*(agentfee/100);
@@ -360,7 +369,7 @@
         <div class="metric"><div class="metric-label">Patrimonio total comprador</div><div class="metric-value pos big">${fmt(buyerTotal)} kr</div><div class="metric-sub">piso + inversiones</div></div>
       </div>
       <div class="grid-3" style="margin-top:11px">
-        <div class="metric"><div class="metric-label">Inversor: cartera (tras aktieskat)</div><div class="metric-value" style="color:var(--ink)">${fmt(investPort)} kr</div><div class="metric-sub">${fmt(downPmt)} kr entrada + excedente, gravado anual</div></div>
+        <div class="metric"><div class="metric-label">Inversor: cartera (tras aktieskat)</div><div class="metric-value" style="color:var(--ink)">${fmt(investPort)} kr</div><div class="metric-sub">${fmt(downPmt+buyingCosts)} kr (entrada + costes de compra) + excedente, gravado anual</div></div>
         <div class="metric"><div class="metric-label">Diferencia</div><div class="metric-value ${won?'pos':'neg'}">${won?'+':'−'}${fmt(Math.abs(advantage))} kr</div><div class="metric-sub">${won?'comprar va por delante':'invertir va por delante'}</div></div>
         <div class="metric"><div class="metric-label">Veredicto</div><div class="metric-value ${won?'pos':'neg'}" style="font-size:1.05rem">${won?'Gana comprar':'Gana invertir'}</div><div class="metric-sub">${compareLabel}</div></div>
       </div>`;
@@ -382,7 +391,7 @@
       <div class="note">${netCost<rentYr1?`El coste neto real de comprar (${fmt(netCost)} kr/mes) ya es menor que tu alquiler de ${fmt(rentYr1)} kr.`:`Comprar cuesta ${fmt(ownMo)} kr/mes frente a tu alquiler de ${fmt(rentYr1)} kr; el lado más barato invierte la diferencia.`}${rentout?` Desde el año ${moveOut} pasas a modo casero — mira el desglose arriba.`:''}</div>`;
   }
 
-  ['price','rate','down','rent','rentinc','moveyr','rentinc-recv','landcost','renttax','ejud','appr','frad','inv','aktthresh','agentfee','sellfix','gaintax'].forEach(id=>document.getElementById(id).addEventListener('input',update));
+  ['price','rate','down','buyfix','rent','rentinc','moveyr','rentinc-recv','landcost','renttax','ejud','appr','frad','inv','aktthresh','agentfee','sellfix','gaintax'].forEach(id=>document.getElementById(id).addEventListener('input',update));
   ['ionly','rentout','parcelhus'].forEach(id=>document.getElementById(id).addEventListener('change',update));
   update();
 </script>
