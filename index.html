@@ -127,6 +127,8 @@
       <div class="cg-title">Inmueble y préstamo</div>
       <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Precio de compra</span><span class="ctrl-val" id="o-price">2.500.000 kr</span></div><input type="range" min="1500000" max="5000000" step="50000" value="2500000" id="price"></div>
       <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Tipo realkredit (fijo)</span><span class="ctrl-val" id="o-rate">4,6%</span></div><input type="range" min="3.0" max="6.5" step="0.1" value="4.6" id="rate"></div>
+      <div class="ctrl"><div class="ctrl-head"><span class="ctrl-label">Entrada (capital propio)</span><span class="ctrl-val" id="o-down">20%</span></div><input type="range" min="5" max="40" step="1" value="20" id="down"></div>
+      <p class="hint" id="loan-split">Realkredit 80% · banco 0% · entrada 20%. El realkredit llega hasta el 80%; el banco solo cubre el hueco si pones menos del 20%.</p>
       <label class="ctrl-toggle"><input type="checkbox" id="ionly" checked> Solo intereses los primeros 10 años (afdragsfrit)</label>
 
       <div class="cg-title">Tu alquiler actual (fase de residencia)</div>
@@ -185,7 +187,7 @@
   <footer class="notes">
     <h3>Notas y supuestos</h3>
     <p><strong>Esto no es asesoramiento financiero ni fiscal.</strong> Es una herramienta de planificación con estimaciones. Los números reales dependen de tu situación concreta, del inmueble y de la normativa vigente.</p>
-    <p><strong>Sistema 5/15/80:</strong> se asume 5% de entrada en efectivo, 75% vía realkredit y 15% vía préstamo bancario (a un tipo ~1,5 puntos por encima del realkredit), es decir un 20% de capital propio total.</p>
+    <p><strong>Estructura del préstamo (5/15/80):</strong> el realkredit financia hasta el 80% del valor; debes aportar al menos un 5% en efectivo; y el banco cubre el hueco entre tu entrada y ese 20% restante (a un tipo ~1,5 puntos por encima del realkredit). Con una entrada del 20% o más, no hace falta préstamo bancario. La entrada es tu capital propio y es lo que se invierte en el escenario alternativo.</p>
     <p><strong>Parcelhusreglen:</strong> la venta de la vivienda habitual está exenta de impuestos, pero alquilarla durante años puede comprometer esa exención. Es el punto más incierto del cálculo — verifícalo con un revisor antes de decidir.</p>
     <p><strong>Impuesto del alquiler:</strong> tributación como casero no residente simplificada a un tipo único sobre el beneficio neto (intereses, ejerudgift y costes deducidos). En la práctica es más matizado.</p>
     <p><strong>Inversión:</strong> rentabilidad constante con aktieskat aplicado cada año sobre la ganancia (lagerbeskatning, 27% / 42%). En la realidad la rentabilidad varía año a año.</p>
@@ -222,7 +224,7 @@
   const t=(id,val)=>document.getElementById(id).textContent=val;
 
   function update(){
-    const price=+v('price'), rate=+v('rate'), ionly=c('ionly'),
+    const price=+v('price'), rate=+v('rate'), ionly=c('ionly'), downPct=+v('down'),
       baseRent=+v('rent'), rentInc=+v('rentinc'),
       rentout=c('rentout'), moveYr=+v('moveyr'), rentRecv=+v('rentinc-recv'),
       landCost=+v('landcost'), rentTax=+v('renttax'),
@@ -239,8 +241,13 @@
     document.getElementById('gaintax-row').style.display = parcelhus?'none':'';
 
     const moveOut = rentout ? moveYr : 10;
-    const rkLoan=price*0.75, bankLoan=price*0.15, downPmt=price*0.20, bankRate=Math.min(rate+1.5,7.5);
+    const down=downPct/100;
+    const rkPct=Math.min(0.80, 1-down), bankPct=Math.max(0, 1-down-rkPct);
+    const rkLoan=price*rkPct, bankLoan=price*bankPct, downPmt=price*down, bankRate=Math.min(rate+1.5,7.5);
     const rkInt=rkLoan*(rate/100)/12, bankInt=bankLoan*(bankRate/100)/12;
+    const hasBank=bankLoan>1;
+    t('o-down',downPct+'%');
+    t('loan-split',`Realkredit ${Math.round(rkPct*100)}% · banco ${Math.round(bankPct*100)}% · entrada ${downPct}%. El realkredit llega hasta el 80%; el banco solo cubre el hueco si pones menos del 20%.`);
     const taxSave=(rkInt+bankInt)*(frad/100), ejudMo=ejud/12;
     const bankPmt=mpmt(bankLoan,bankRate,20), rkPmtFull=mpmt(rkLoan,rate,30), rkPmtPh2=mpmt(rkLoan,rate,20);
 
@@ -279,7 +286,7 @@
         <div class="box"><div class="box-title"><span class="dot" style="background:var(--buy)"></span>Comprando</div>
           <div class="row"><span class="l">Intereses realkredit</span><span class="r">${fmt(rkInt)} kr</span></div>
           ${!ionly?`<div class="row"><span class="l">Principal realkredit</span><span class="r">${fmt(rkPmtFull-rkInt)} kr</span></div>`:''}
-          <div class="row"><span class="l">Préstamo banco (${fmtP(bankRate)})</span><span class="r">${fmt(bankPmt)} kr</span></div>
+          ${hasBank?`<div class="row"><span class="l">Préstamo banco (${fmtP(bankRate)})</span><span class="r">${fmt(bankPmt)} kr</span></div>`:''}
           <div class="row"><span class="l">Ejerudgift/mes</span><span class="r">${fmt(ejudMo)} kr</span></div>
           <div class="row"><span class="l pos">Rentefradrag (${frad}%)</span><span class="r pos">−${fmt(taxSave)} kr</span></div>
           <div class="row total"><span class="l">Salida de caja</span><span class="r">${fmt(ownMo)} kr</span></div>
@@ -301,10 +308,10 @@
           <div class="row"><span class="l">Alquiler recibido</span><span class="r pos">+${fmt(rentRecv)} kr</span></div>
           <div class="row"><span class="l">Costes de casero (${landCost}%: vacíos, gestión, mant.)</span><span class="r neg">−${fmt(opCosts)} kr</span></div>
           <div class="row"><span class="l">Ejerudgift</span><span class="r neg">−${fmt(ejudMo)} kr</span></div>
-          <div class="row"><span class="l">Cuota hipoteca (realkredit ${ionly?'intereses':'+ principal'} + banco)</span><span class="r neg">−${fmt(mortgageRental)} kr</span></div>
+          <div class="row"><span class="l">Cuota hipoteca (realkredit ${ionly?'intereses':'+ principal'}${hasBank?' + banco':''})</span><span class="r neg">−${fmt(mortgageRental)} kr</span></div>
           <div class="row"><span class="l">Impuesto beneficio neto (${rentTax}% de ${fmt(Math.max(0,taxableRental))} kr)</span><span class="r neg">−${fmt(rentalTaxMo)} kr</span></div>
           <div class="row total ${netRentalMo>=0?'pos':'neg'}"><span class="l">Flujo de caja neto del alquiler</span><span class="r ${netRentalMo>=0?'pos':'neg'}">${netRentalMo>=0?'+':''}${fmt(netRentalMo)} kr/mes</span></div>
-          ${netRentalMo>=0?`<span class="pill info">Positivo — se invierte cada mes al ${fmtP(inv)}/año</span>`:`<span class="pill warn">Negativo — la revalorización debe compensar. Habitual con 20% de entrada a tipos del ${fmtP(rate)}.</span>`}
+          ${netRentalMo>=0?`<span class="pill info">Positivo — se invierte cada mes al ${fmtP(inv)}/año</span>`:`<span class="pill warn">Negativo — la revalorización debe compensar. Habitual con poca entrada a tipos del ${fmtP(rate)}.</span>`}
         </div>`;
     }
 
@@ -341,7 +348,7 @@
         <div class="row"><span class="l neg">Tinglysning y costes de venta</span><span class="r neg">−${fmt(sellfix)} kr</span></div>
         ${!parcelhus?`<div class="row"><span class="l neg">Impuesto ganancia (${gaintax}% de ${fmt(gain)} kr)</span><span class="r neg">−${fmt(propGainTax)} kr</span></div>`:''}
         <div class="row"><span class="l neg">Saldo realkredit${ionly?' (solo intereses)':''}</span><span class="r neg">−${fmt(rkBalance)} kr</span></div>
-        <div class="row"><span class="l neg">Saldo restante préstamo banco</span><span class="r neg">−${fmt(bankBalance)} kr</span></div>
+        ${hasBank?`<div class="row"><span class="l neg">Saldo restante préstamo banco</span><span class="r neg">−${fmt(bankBalance)} kr</span></div>`:''}
         <div class="row total ${cashInPocket>0?'pos':'neg'}"><span class="l">Dinero neto del piso</span><span class="r ${cashInPocket>0?'pos':'neg'}">${fmt(cashInPocket)} kr</span></div>
         ${parcelhus?`<span class="pill info">Ganancia libre de impuestos — parcelhusreglen ✓</span>`:`<span class="pill warn">Ganancia con impuesto — exención asumida como perdida</span>`}
       </div>
@@ -375,7 +382,7 @@
       <div class="note">${netCost<rentYr1?`El coste neto real de comprar (${fmt(netCost)} kr/mes) ya es menor que tu alquiler de ${fmt(rentYr1)} kr.`:`Comprar cuesta ${fmt(ownMo)} kr/mes frente a tu alquiler de ${fmt(rentYr1)} kr; el lado más barato invierte la diferencia.`}${rentout?` Desde el año ${moveOut} pasas a modo casero — mira el desglose arriba.`:''}</div>`;
   }
 
-  ['price','rate','rent','rentinc','moveyr','rentinc-recv','landcost','renttax','ejud','appr','frad','inv','aktthresh','agentfee','sellfix','gaintax'].forEach(id=>document.getElementById(id).addEventListener('input',update));
+  ['price','rate','down','rent','rentinc','moveyr','rentinc-recv','landcost','renttax','ejud','appr','frad','inv','aktthresh','agentfee','sellfix','gaintax'].forEach(id=>document.getElementById(id).addEventListener('input',update));
   ['ionly','rentout','parcelhus'].forEach(id=>document.getElementById(id).addEventListener('change',update));
   update();
 </script>
